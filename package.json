@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "webpack": "webpack",
-    "start": "webpack && node index.js"
+    "start": "webpack && node index.js",
+    "build-executable": "pkg --output runlist.dist index.js"
   },
   "author": "",
   "license": "ISC",
