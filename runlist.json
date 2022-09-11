@@ -1,0 +1,16 @@
+[
+  {
+    "cmd": ["winver"],
+    "runMode": "wait-for-continue",
+    "startAfterThis": [
+      {
+        "cmd": ["C:/Program Files/VideoLAN/VLC/vlc.exe"]
+      },
+      {
+        "cmd": [
+          "C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe"
+        ]
+      }
+    ]
+  }
+]
