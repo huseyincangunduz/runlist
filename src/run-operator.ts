@@ -1,6 +1,7 @@
 import { RunModel } from "./run-model";
 import * as ChildProcess from "child_process";
 import path from "path";
+import { CONTINUE } from "./run-mode";
 
 export const OperatorStatus = "";
 export class Operator {
@@ -8,7 +9,7 @@ export class Operator {
 
   operate(runModels: RunModel[]) {
     runModels.forEach((model) => {
-      if (model.runMode == "continue-after-start") {
+      if (model.afterLaunch == CONTINUE) {
         this.launchAndContinue(model);
       } else {
         if (model.waitBeforeExit) {
@@ -46,25 +47,67 @@ export class Operator {
     return args;
   }
 
-  private launchAndContinue(model: RunModel) {
+  private runProcess(model: RunModel) {
     const command = model.cmd[0],
       params = this.flatParameters(model);
-    ChildProcess.spawn(command, params);
-    this.continue(model.startAfterThis);
+    const proccess = ChildProcess.spawn(command, params);
+    model._process = proccess;
+
+    return proccess;
+  }
+
+  private launchAndContinue(model: RunModel) {
+    const command = model.cmd[0];
+    const alias = model.alias || command;
+
+    console.info("RUNNING AND CONTINUED: " + alias);
+    const proccess = this.runProcess(model);
+    this.bindListeners(proccess, command, model, false);
   }
 
   private launchWait(model: RunModel) {
-    const command = model.cmd[0],
-      params = this.flatParameters(model);
-    const proccess = ChildProcess.spawnSync(command, params, {});
-    model._process = proccess;
-    const exception = proccess.error,
-      processFinishError = proccess.stderr;
+    const command = model.cmd[0];
+    const alias = model.alias || command;
+    console.info("RUNNING AND WAITED FOR: " + alias);
+    const proccess = this.runProcess(model);
+    this.bindListeners(proccess, command, model);
+  }
 
-    if (exception) console.error(exception);
-    if (processFinishError) console.error(processFinishError);
-    const modelIndex = this.waitFor.indexOf(model);
-    if (modelIndex > -1) this.waitFor.splice(modelIndex, 1);
-    this.continue(model.startAfterThis);
+  private bindListeners(
+    proccess: ChildProcess.ChildProcessWithoutNullStreams,
+    command: string,
+    model: RunModel,
+    sync = true
+  ) {
+    const alias = model.alias || command;
+
+    if (sync) {
+      this.waitFor.push(model);
+    }
+    proccess.stdout.on("data", (data) =>
+      console.info(`${alias} STDOUT ${data}`)
+    );
+    proccess.stderr.on("data", (data) =>
+      console.warn(`${alias} STDERR ${data}`)
+    );
+    proccess.addListener("error", (e) =>
+      console.error(`${alias} ERROR ${e.message}`)
+    );
+    proccess.addListener("message", (m) =>
+      console.info(`${alias} MESSAGE ${m}`)
+    );
+
+    proccess.addListener("exit", (exitCode) => {
+      console.info(`${alias} EXIT ${exitCode}`);
+      if (sync) {
+        const modelIndex = this.waitFor.indexOf(model);
+        if (modelIndex > -1) this.waitFor.splice(modelIndex, 1);
+        this.continue(model.startAfterThis);
+      }
+    });
+
+    if (!sync) {
+      this.continue(model.startAfterThis);
+    }
   }
 }
