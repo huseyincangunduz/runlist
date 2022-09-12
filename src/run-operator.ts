@@ -2,10 +2,26 @@ import { RunModel } from "./run-model";
 import * as ChildProcess from "child_process";
 import path from "path";
 import { CONTINUE } from "./run-mode";
+import { spy } from "./spy";
 
 export const OperatorStatus = "";
 export class Operator {
   waitFor: RunModel[] = [];
+  allRuns: RunModel[] = [];
+  constructor() {
+    process.addListener("SIGINT", () => this.shutdownRespectfully()); // CTRL+C
+    process.addListener("SIGQUIT", () => this.shutdownRespectfully()); // Keyboard quit
+    process.addListener("SIGTERM", () => {
+      console.info("GOD FINALLY -SPY");
+      console.info(spy);
+    }); // Keyboard quit
+  }
+
+  shutdownRespectfully(): void {
+    this.allRuns.forEach((proc) => {
+      proc._process?.kill("SIGINT");
+    });
+  }
 
   operate(runModels: RunModel[]) {
     runModels.forEach((model) => {
@@ -84,6 +100,8 @@ export class Operator {
     if (sync) {
       this.waitFor.push(model);
     }
+    this.allRuns.push(model);
+
     proccess.stdout.on("data", (data) =>
       console.info(`${alias} STDOUT ${data}`)
     );
