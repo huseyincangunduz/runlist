@@ -24,7 +24,7 @@ export class Operator {
         proc._process?.kill("SIGINT");
       }
     });
-    console.info("BEGIN TO RESPECTFULLY COMPLETED");
+    console.info("RESPECTFULLY SHUTDOWN COMPLETED");
   }
 
   operate(runModels: RunModel[]) {
