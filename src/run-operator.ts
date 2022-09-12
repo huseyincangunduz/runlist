@@ -19,9 +19,12 @@ export class Operator {
 
   shutdownRespectfully(): void {
     console.info("BEGIN TO RESPECTFULLY SHUTDOWN");
-    this.allRuns.forEach((proc) => {
-      if (proc._process?.exitCode == null) {
-        proc._process?.kill("SIGINT");
+    this.allRuns.forEach((model) => {
+      if (model._process?.exitCode == null) {
+        const alias = this.getAlias(model);
+        console.info(`${alias} CLOSING`);
+        model._process?.kill("SIGINT");
+        console.info(`${alias} CLOSED WITH ${model._process?.exitCode}`);
       }
     });
     console.info("RESPECTFULLY SHUTDOWN COMPLETED");
@@ -87,10 +90,14 @@ export class Operator {
 
   private launchWait(model: RunModel) {
     const command = model.cmd[0];
-    const alias = model.alias || command;
+    const alias = this.getAlias(model);
     console.info("RUNNING AND WAITED FOR: " + alias);
     const proccess = this.runProcess(model);
     this.bindListeners(proccess, command, model);
+  }
+
+  private getAlias(model: RunModel) {
+    return model.alias || model.cmd[0];
   }
 
   private bindListeners(
