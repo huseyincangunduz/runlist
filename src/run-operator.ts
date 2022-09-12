@@ -18,9 +18,13 @@ export class Operator {
   }
 
   shutdownRespectfully(): void {
+    console.info("BEGIN TO RESPECTFULLY SHUTDOWN");
     this.allRuns.forEach((proc) => {
-      proc._process?.kill("SIGINT");
+      if (proc._process?.exitCode == null) {
+        proc._process?.kill("SIGINT");
+      }
     });
+    console.info("BEGIN TO RESPECTFULLY COMPLETED");
   }
 
   operate(runModels: RunModel[]) {
